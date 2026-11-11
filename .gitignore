@@ -1,0 +1,25 @@
+# Variables d'environnement
+.env
+
+# Docker
+docker-compose.override.yml
+
+# Sauvegardes
+sauvegardes/
+
+# Système
+.DS_Store
+Thumbs.db
+
+# Éditeurs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Journaux
+logs/
+*.log
+
+# Claude
+.claude/
