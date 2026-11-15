@@ -4,54 +4,119 @@ Dépôt de déploiement de la plateforme **XeuySil** : mise en relation entre re
 
 ## Présentation
 
-Ce dépôt orchestre le déploiement de l'ensemble de la pile applicative via **Docker Compose**. Il récupère les images produites par les pipelines CI des dépôts `serveur-ic` et `client-ic`, puis déploie la stack complète.
+Ce dépôt orchestre le déploiement de l'ensemble de la pile applicative via **Docker Compose**. Il récupère les images produites par les pipelines CI des dépôts `serveur-ic` et `client-ic`, puis déploie la stack complète derrière un proxy inverse Nginx.
+
+## Architecture
+
+```
+                  ┌─────────┐
+    Port 80 ─────►│  Nginx  │
+                  └────┬────┘
+                       │
+          ┌────────────┼────────────┐
+          │            │            │
+    /api/* & /docs     │            /
+          │            │            │
+    ┌─────▼─────┐      │     ┌──────▼─────┐
+    │  Serveur  │      │     │   Client   │
+    │  (NestJS) │      │     │ (Expo Web) │
+    │  :3000    │      │     │   :3000    │
+    └─────┬─────┘      │     └────────────┘
+          │            │
+    ┌─────▼──────┐     │
+    │ PostgreSQL │     │
+    │  :5432     │     │
+    └────────────┘     │
+```
 
 ## Services déployés
 
-| Service | Image | Port | Rôle |
-|---------|-------|------|------|
-| **postgres** | PostgreSQL 16 | 5432 | Base de données (volume persistant) |
-| **redis** | Redis 7 | 6379 | Cache et files de tâches |
-| **identity** | xeuysil/identity | 3001 | Service identité |
-| **mission** | xeuysil/mission | 3002 | Service missions |
-| **matching** | xeuysil/matching | 3003 | Service mise en relation |
-| **notification** | xeuysil/notification | 3004 | Service notifications |
-| **admin-web** | xeuysil/admin-web | 3000 | Console d'administration |
-| **nginx** | Nginx | 80 | Passerelle d'accès (proxy inverse) |
+| Service | Image | Rôle |
+|---------|-------|------|
+| **postgres** | PostgreSQL 16 Alpine | Base de données avec volume persistant |
+| **serveur** | xeuysil/serveur | API NestJS (authentification, missions, candidatures, notifications, WhatsApp) |
+| **client** | xeuysil/client | Interface web Expo (travailleurs, recruteurs, agents, administration) |
+| **nginx** | Nginx Alpine | Proxy inverse — seul point d'accès (port 80) |
 
-## Structure attendue
+## Structure du dépôt
 
 ```
 deploiement-dc/
-├── docker-compose.yml      # Définition de la pile complète
-├── .env.example            # Modèle de variables d'environnement
+├── docker-compose.yml          # Définition de la pile complète
+├── .env.example                # Modèle de variables d'environnement
 ├── nginx/
-│   ├── nginx.conf          # Configuration du proxy inverse
+│   ├── nginx.conf              # Configuration du proxy inverse
 │   └── Dockerfile
 ├── scripts/
-│   ├── verifier-sante.sh   # Vérification de santé des services
-│   └── sauvegarder-bdd.sh  # Sauvegarde de la base de données
-├── Jenkinsfile
+│   ├── verifier-sante.sh       # Vérification de santé des services
+│   └── sauvegarder-bdd.sh      # Sauvegarde de la base de données
+├── Jenkinsfile                 # Pipeline de livraison continue
 └── README.md
 ```
 
-## Flux de déploiement (à venir)
+## Déploiement
 
-Le pipeline Jenkins de déploiement sera configuré après validation des pipelines CI :
-
-1. Récupération des dernières images depuis Docker Hub
-2. Arrêt progressif des anciens conteneurs
-3. Déploiement avec `docker compose up -d`
-4. Vérification de santé de chaque service (`/health`)
-5. Notification du résultat (succès ou échec)
-
-Le redéploiement se fait **sans interruption de service** (rolling update).
-
-## Prérequis
+### Prérequis
 
 - Docker (version 24 ou supérieure)
 - Docker Compose (version 2 ou supérieure)
 - Accès à Docker Hub pour récupérer les images
+
+### Premier déploiement
+
+```bash
+# 1. Copier et remplir les variables d'environnement
+cp .env.example .env
+# Éditer .env avec les vraies valeurs (Supabase, WhatsApp, mot de passe PostgreSQL)
+
+# 2. Lancer la pile
+docker compose up -d
+
+# 3. Vérifier que tout fonctionne
+./scripts/verifier-sante.sh
+```
+
+### Mise à jour (rolling update)
+
+```bash
+# Récupérer les nouvelles images
+docker compose pull serveur client
+
+# Redéployer (seuls les services modifiés sont recréés)
+docker compose up -d
+```
+
+### Pipeline Jenkins (CD)
+
+Le pipeline Jenkins automatise le déploiement :
+
+1. **Récupération des images** depuis Docker Hub
+2. **Arrêt progressif** des anciens conteneurs
+3. **Déploiement** avec `docker compose up -d`
+4. **Vérification de santé** de chaque service
+5. **Notification** du résultat
+
+### Sauvegarde de la base de données
+
+```bash
+# Sauvegarde manuelle
+./scripts/sauvegarder-bdd.sh
+
+# Les sauvegardes sont stockées dans ./sauvegardes/
+# Rétention automatique : 7 jours
+```
+
+## Variables d'environnement
+
+Voir `.env.example` pour la liste complète. Les principales :
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | URL de connexion PostgreSQL (format Prisma) |
+| `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | Authentification Supabase |
+| `WHATSAPP_ACCESS_TOKEN` | Jeton d'accès WhatsApp Business API |
+| `DOCKER_REGISTRY` | Nom du registre Docker Hub |
+| `IMAGE_TAG` | Tag des images à déployer |
 
 ## Équipe
 
