@@ -1,0 +1,11 @@
+# Surcharge locale : utilise les images buildees localement
+services:
+  serveur:
+    image: xeuysil/serveur:local
+
+  client:
+    image: xeuysil/client:local
+
+  nginx:
+    image: xeuysil/nginx:local
+    build: !reset null

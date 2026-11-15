@@ -26,7 +26,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/v1/bootstrap || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/docs || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -41,7 +41,7 @@ services:
     depends_on:
       - serveur
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -54,7 +54,7 @@ services:
     build: ./nginx
     container_name: xeuysil-nginx
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       serveur:
         condition: service_healthy
