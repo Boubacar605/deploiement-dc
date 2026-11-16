@@ -1,7 +1,7 @@
 #!/bin/bash
 # Vérifie la santé de tous les services de la pile XeuySil
 
-SERVICES=("http://localhost/api/v1/bootstrap" "http://localhost/nginx-health" "http://localhost")
+SERVICES=("http://localhost:8080/api/v1/settings/public" "http://localhost:8080/nginx-health" "http://localhost:8080")
 NOMS=("Serveur (API)" "Nginx (proxy)" "Client (web)")
 MAX_TENTATIVES=10
 DELAI=5
