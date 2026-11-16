@@ -19,7 +19,7 @@ pipeline {
         stage('Récupération des images') {
             steps {
                 sh '''
-                    docker-compose -f ${DEPLOY_DIR}/docker-compose.yml pull serveur client || true
+                    docker compose -f ${DEPLOY_DIR}/docker compose.yml pull serveur client || true
                 '''
             }
         }
@@ -28,7 +28,7 @@ pipeline {
             steps {
                 sh '''
                     cd ${DEPLOY_DIR}
-                    docker-compose -f docker-compose.yml -f docker-compose.local.yml \
+                    docker compose -f docker compose.yml -f docker compose.local.yml \
                         up -d --remove-orphans
                 '''
             }
@@ -52,10 +52,10 @@ pipeline {
         }
         failure {
             echo 'Échec du déploiement. Vérifiez les journaux des conteneurs.'
-            sh 'docker-compose -f ${DEPLOY_DIR}/docker-compose.yml logs --tail=30 || true'
+            sh 'docker compose -f ${DEPLOY_DIR}/docker compose.yml logs --tail=30 || true'
         }
         always {
-            sh 'docker-compose -f ${DEPLOY_DIR}/docker-compose.yml ps || true'
+            sh 'docker compose -f ${DEPLOY_DIR}/docker compose.yml ps || true'
         }
     }
 }
