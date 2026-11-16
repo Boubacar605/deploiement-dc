@@ -96,6 +96,36 @@ Le pipeline Jenkins automatise le déploiement :
 4. **Vérification de santé** de chaque service
 5. **Notification** du résultat
 
+### Persistance des données
+
+Le volume nommé `xeuysil_pgdata` assure la persistance des données PostgreSQL entre les redéploiements :
+
+```bash
+# Vérifier que le volume existe et contient des données
+docker volume inspect xeuysil_pgdata
+
+# Les données survivent à un redéploiement complet
+docker compose down && docker compose up -d
+# → Les données sont toujours présentes
+```
+
+### Vérification de santé
+
+Chaque service expose un endpoint de santé vérifié automatiquement par Docker :
+
+```bash
+# Vérifier l'état de tous les services
+docker compose ps
+
+# Vérification manuelle via le script
+./scripts/verifier-sante.sh
+```
+
+Les healthchecks configurés :
+- **postgres** : `pg_isready` toutes les 10 secondes
+- **serveur** : `GET /docs` toutes les 15 secondes
+- **client** : `GET /health` toutes les 15 secondes
+
 ### Sauvegarde de la base de données
 
 ```bash
