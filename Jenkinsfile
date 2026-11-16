@@ -10,7 +10,7 @@ pipeline {
     environment {
         DOCKER_REGISTRY = "${params.DOCKER_REGISTRY}"
         IMAGE_TAG       = "${params.IMAGE_TAG}"
-        DEPLOY_DIR      = '/home/niang/Documents/Master-2/DevOps/Xeuysil_Project/deploiement-dc'
+        DEPLOY_DIR      = '/xeuysil/deploiement-dc'
     }
 
     stages {
